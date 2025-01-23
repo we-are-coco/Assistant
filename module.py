@@ -4,19 +4,25 @@ import base64
 from openai import AzureOpenAI  
 import re
 import os
+from dotenv import load_dotenv
+from pathlib import Path
 
 
 class AImodule:
-    def __init__(self, subscription_key=None, key_file='key.json'):
+    def __init__(self, subscription_key=None):
+        # 현재 파일의 디렉토리에서 .env 파일 경로 설정
+        env_path = Path(__file__).parent / '.env'
+        load_dotenv(env_path)
+        
         if subscription_key:
             self.subscription_key = subscription_key
-        elif os.path.exists(key_file):
-            with open(key_file, 'r') as file:
-                self.api = json.load(file)
-            self.subscription_key = self.api['azure']
         else:
-            self.subscription_key = input("Azure OpenAI API 키를 입력하세요: ")
-        self.endpoint_url = "https://team2northcentralus.openai.azure.com/"
+            # .env 파일에서 API 키 가져오기
+            self.subscription_key = os.getenv('AZURE_API_KEY')
+            if not self.subscription_key:
+                self.subscription_key = input("Azure OpenAI API 키를 입력하세요: ")
+                
+        self.endpoint_url = "https://team2openainorthcentralus.openai.azure.com/"
         self.deployment_name = "gpt-4o"
         self.client = AzureOpenAI(
             azure_endpoint=self.endpoint_url,
