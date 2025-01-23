@@ -191,11 +191,83 @@ def thinking(image: str) -> str:
 
     return answer2_json
 
-image_path = "img/image (3).jpg"
-result = thinking(image_path)
-
 
 # %%
 
+def thinking2(image: str) -> str:
+    unified_prompt = """
+    You are an expert image analyzer and information extractor specialized in schedule-related images. Please analyze the provided image and perform the following tasks:
 
+    1. Classify the image into ONE of the following categories:
+       - "Gifticon": Digital gift certificates, vouchers, mobile coupons, or any digital form of store credit
+       - "Transportation": Any tickets related to transportation including train, bus, plane, or ferry tickets
+       - "Entertainment": Tickets or bookings for leisure activities such as movies, concerts, theater performances, exhibitions, or sports events
+       - "Appointment": Any form of scheduled meetings or reservations including text messages, chat conversations, reservation confirmations, calendar screenshots, or meeting invitations
+       - "Others": Images that don't contain any schedule-related information
+
+    2. Based on the classified category, extract relevant information using the appropriate format below:
+
+       - For Gifticon:
+         {
+             "category": "Gifticon",
+             "brand": "Store or brand name",
+             "item": "Product or service name",
+             "valid_until": "YYYY-MM-DD",
+             "code": "Barcode or serial number"
+         }
+
+       - For Transportation:
+         {
+             "category": "Transportation",
+             "type": "Train/Bus/Plane",
+             "from": "Departure location",
+             "to": "Arrival location",
+             "date": "YYYY-MM-DD",
+             "time": "HH:MM"
+         }
+
+       - For Entertainment:
+         {
+             "category": "Entertainment",
+             "type": "Movie/Concert/Exhibition",
+             "title": "Event name",
+             "date": "YYYY-MM-DD",
+             "time": "HH:MM",
+             "location": "Venue name"
+         }
+
+       - For Appointment:
+         {
+             "category": "Appointment",
+             "type": "Meeting/Medical/Restaurant/etc",
+             "date": "YYYY-MM-DD",
+             "time": "HH:MM",
+             "location": "Place name",
+             "details": "Additional info"
+         }
+
+       - For Others:
+         {
+             "category": "Others",
+             "description": "Brief description of content"
+         }
+
+    IMPORTANT INSTRUCTIONS:
+    - Choose EXACTLY ONE category that best describes the image
+    - Use EXACTLY the format shown above for the identified category
+    - Use "null" if information is not available
+    - Return ONLY the JSON object, no additional text
+    - Keep all responses in Korean language
+    - If unsure or if the image doesn't clearly fit into the first four categories, classify as "Others"
+    """
+
+    answer = call_azure_api(unified_prompt, image)
+    answer_json = extract_json_from_string(answer)
+    print("answer:", answer)
+    print(answer_json, type(answer_json))
+
+    return answer_json
+
+image_path = "img/이미지 (3).png"
+result = thinking2(image_path)
 # %%
