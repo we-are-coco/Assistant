@@ -6,12 +6,17 @@ import re
 
 
 class AImodule:
-    def __init__(self, key_file='key.json'):
-        with open(key_file, 'r') as file:
-            self.api = json.load(file)
+    def __init__(self, subscription_key=None, key_file='key.json'):
+        if subscription_key:
+            self.subscription_key = subscription_key
+        elif os.path.exists(key_file):
+            with open(key_file, 'r') as file:
+                self.api = json.load(file)
+            self.subscription_key = self.api['azure']
+        else:
+            self.subscription_key = input("Azure OpenAI API 키를 입력하세요: ")
         self.endpoint_url = "https://team2northcentralus.openai.azure.com/"
         self.deployment_name = "gpt-4o"
-        self.subscription_key = self.api['azure']
         self.client = AzureOpenAI(
             azure_endpoint=self.endpoint_url,
             api_key=self.subscription_key,
@@ -162,7 +167,7 @@ if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
 
-    image_path = "img/gifticon.jpeg"
+    image_path = "img/thailand_train.jpg"
     image = Image.open(image_path)
     plt.imshow(image)
     plt.axis('off')
