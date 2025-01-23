@@ -137,7 +137,7 @@ def thinking(image: str) -> str:
 
     Based on the category, extract information using EXACTLY one of these formats:
 
-    1. For Gifticon:
+    1. For Coupon:
     {
         "category": "Gifticon",
         "brand": "Store or brand name",
@@ -212,9 +212,9 @@ def thinking2(image: str) -> str:
 
     2. Based on the classified category, extract relevant information using the appropriate format below:
 
-       - For Gifticon:
+       - For Coupon:
          {
-             "category": "기프티콘",
+             "category": "쿠폰",
              "brand": "가게 혹은 브랜드 이름",
              "item": "물건 혹은 서비스 이름",
              "valid_until": "YYYY-MM-DD",
