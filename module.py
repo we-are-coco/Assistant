@@ -3,6 +3,7 @@ import json
 import base64
 from openai import AzureOpenAI  
 import re
+import os
 
 
 class AImodule:
