@@ -1,12 +1,9 @@
 # %%
-import requests
 import json
-import os  
 import base64
 from openai import AzureOpenAI  
-import json
 import re
-import os
+
 
 class AImodule:
     def __init__(self, key_file='key.json'):
@@ -162,7 +159,7 @@ if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
 
-    image_path = "img/english_bc2.jpg"
+    image_path = "img/japan_disney.webp"
     image = Image.open(image_path)
     plt.imshow(image)
     plt.axis('off')
