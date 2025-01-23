@@ -6,6 +6,11 @@ import base64
 from openai import AzureOpenAI  
 import json
 import re
+import os
+
+file_path = 'key.json'
+with open(file_path, 'r') as file:
+    api = json.load(file)
 
 def extract_json_from_string(input_data):
     if isinstance(input_data, (list, dict)):
@@ -29,7 +34,7 @@ def extract_json_from_string(input_data):
 def call_azure_api(prompt: str, image: str) -> str:
     ENDPOINT_URL = "https://team2northcentralus.openai.azure.com/"
     DEPLOYMENT_NAME = "gpt-4o"
-    AZURE_OPENAI_API_KEY = "your-api-key"
+    AZURE_OPENAI_API_KEY = api['azure']
 
     endpoint = os.getenv("ENDPOINT_URL", ENDPOINT_URL)  
     deployment = os.getenv("DEPLOYMENT_NAME", DEPLOYMENT_NAME)  
@@ -209,47 +214,60 @@ def thinking2(image: str) -> str:
 
        - For Gifticon:
          {
-             "category": "Gifticon",
-             "brand": "Store or brand name",
-             "item": "Product or service name",
+             "category": "기프티콘",
+             "brand": "가게 혹은 브랜드 이름",
+             "item": "물건 혹은 서비스 이름",
              "valid_until": "YYYY-MM-DD",
-             "code": "Barcode or serial number"
+             "code": "바코드 혹은 시리얼 번호",
+             "description": "내용을 간략하게 번역하여 작성"
          }
 
        - For Transportation:
          {
-             "category": "Transportation",
-             "type": "Train/Bus/Plane",
-             "from": "Departure location",
-             "to": "Arrival location",
-             "date": "YYYY-MM-DD",
-             "time": "HH:MM"
+             "category": "교통",
+             "type": "기차/버스/비행기",
+             "from": "출발 장소",
+             "to": "도착 장소",
+             "departure_date": "YYYY-MM-DD",
+             "departure_time": "HH:MM",
+             "description": "내용을 간략하게 번역하여 작성"
          }
 
        - For Entertainment:
          {
-             "category": "Entertainment",
-             "type": "Movie/Concert/Exhibition",
-             "title": "Event name",
-             "date": "YYYY-MM-DD",
+             "category": "엔터테인먼트",
+             "type": "영화/콘서트/전시",
+             "title": "이벤트 이름",
+             "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
              "time": "HH:MM",
-             "location": "Venue name"
+             "location": "장소 이름",
+             "description": "내용을 간략하게 번역하여 작성"
          }
 
        - For Appointment:
          {
-             "category": "Appointment",
-             "type": "Meeting/Medical/Restaurant/etc",
-             "date": "YYYY-MM-DD",
+             "category": "약속",
+             "type": "미팅/의료/식당/등등",
+             "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
              "time": "HH:MM",
-             "location": "Place name",
-             "details": "Additional info"
+             "location": "장소 이름",
+             "details": "추가 정보",
+             "description": "내용을 간략하게 번역하여 작성"
          }
+
+        - For Unsure:
+        {
+            "category": "불명",
+            "type": "정보 유형",
+            "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
+            "time": "HH:MM" or "HH:MM ~ HH:MM",
+            "description": "내용 간략 설명을 재미있게 그리고 디테일하게 번역하여 작성"
+        }        
 
        - For Others:
          {
-             "category": "Others",
-             "description": "Brief description of content"
+             "category": "기타",
+             "description": "내용 간략 설명을 재미있게 그리고 디테일하게 번역하여 작성"
          }
 
     IMPORTANT INSTRUCTIONS:
@@ -268,6 +286,14 @@ def thinking2(image: str) -> str:
 
     return answer_json
 
-image_path = "img/이미지 (3).png"
+from PIL import Image
+import matplotlib.pyplot as plt
+
+image_path = "img/english_bc2.jpg"
+image = Image.open(image_path)
+plt.imshow(image)
+plt.axis('off')  # 축을 숨김
+plt.show()
 result = thinking2(image_path)
+
 # %%
