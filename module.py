@@ -179,4 +179,3 @@ if __name__ == "__main__":
     plt.show()
     ai_module = AImodule()  # AImodule 인스턴스 생성
     result = ai_module.analyze_image(image_path)  # 인스턴스를 통해 메서드 호출
-# %%
