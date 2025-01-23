@@ -88,6 +88,7 @@ class AImodule:
                  "item": "물건 혹은 서비스 이름",
                  "valid_until": "YYYY-MM-DD",
                  "code": "바코드 혹은 시리얼 번호",
+                 "worth": "가격 혹은 할인 금액",
                  "description": "내용을 간략하게 번역하여 작성"
              }
 
@@ -99,6 +100,7 @@ class AImodule:
                  "to": "도착 장소",
                  "departure_date": "YYYY-MM-DD",
                  "departure_time": "HH:MM",
+                 "worth": "티켓 가격",
                  "description": "내용을 간략하게 번역하여 작성"
              }
 
@@ -110,6 +112,7 @@ class AImodule:
                  "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
                  "time": "HH:MM",
                  "location": "장소 이름",
+                 "worth": "티켓 가격",
                  "description": "내용을 간략하게 번역하여 작성"
              }
 
@@ -159,7 +162,7 @@ if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
 
-    image_path = "img/japan_disney.webp"
+    image_path = "img/gifticon.jpeg"
     image = Image.open(image_path)
     plt.imshow(image)
     plt.axis('off')
