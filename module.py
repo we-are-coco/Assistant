@@ -108,8 +108,8 @@ class AImodule:
              {
                  "category": "교통",
                  "type": "기차/버스/비행기",
-                 "from": "출발 장소",
-                 "to": "도착 장소",
+                 "from_location": "출발 장소",
+                 "to_location": "도착 장소",
                  "departure_date": "YYYY-MM-DD",
                  "departure_time": "HH:MM",
                  "description": "내용을 간략하게 번역하여 작성"
@@ -163,8 +163,6 @@ class AImodule:
 
         answer = self.call_azure_api(unified_prompt, image)
         answer_json = self.extract_json_from_string(answer)
-        print("answer:", answer)
-        print(answer_json, type(answer_json))
 
         return answer_json
     

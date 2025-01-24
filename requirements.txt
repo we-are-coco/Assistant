@@ -7,10 +7,17 @@ fastapi>=0.104.0
 python-multipart>=0.0.6
 uvicorn>=0.24.0
 
+# 데이터베이스
+sqlalchemy>=2.0.23
+pydantic>=2.5.2
+
 # 이미지 처리
 Pillow>=10.0.0
 matplotlib>=3.7.0
 
 # 유틸리티
 python-dotenv>=1.0.0
-requests>=2.31.0 
+requests>=2.31.0
+
+# Azure Blob Storage (선택적)
+azure-storage-blob>=12.19.0 
