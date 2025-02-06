@@ -1,7 +1,10 @@
+# %%
 import audioop
+import pyaudio
 import speech_recognition as sr
 import base64
 import os
+import time
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 from pathlib import Path
@@ -89,7 +92,7 @@ def azure_audio_request(audio_data):
                 "content": [
                     {
                         "type": "text",
-                        "text": "입력된 오디오의 중요 단어를 출력하세요. ex) 부산으로 가는 티켓 찾아줘. Output: [부산, 티켓]"
+                        "text": f"입력된 오디오의 중요 단어를 출력하세요. 현재 시간은 [{time.strftime('%Y-%m-%d %H:%M:%S')}] 입니다. 시간이나 날짜 관련해서 물어 볼 경우 현재 시간을 참고해서 변환하세요. ex) input: 부산으로 가는 티켓 찾아줘. Output: [부산, 티켓], input: 다음 주에 만료되는 쿠폰 찾아줘. *현재시간 2025-02-06-14:00:00 output: [2월, 13일, 쿠폰]"
                     },
                     {
                         "type": "input_audio",
@@ -115,3 +118,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# %%

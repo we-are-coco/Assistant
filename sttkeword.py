@@ -1,3 +1,4 @@
+# %%
 import os
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics import TextAnalyticsClient
@@ -80,3 +81,4 @@ def main():
 # 전체 실행 흐름
 if __name__ == "__main__":
     main()
+# %%
