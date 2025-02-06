@@ -7,3 +7,5 @@
 *.webp
 *.env
 test.py
+vectorsearch.py
+*.wav

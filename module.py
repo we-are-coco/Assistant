@@ -170,10 +170,12 @@ if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
 
-    image_path = "img/gifticon.jpeg"
+    image_path = "img/gifticon.jpg"
     image = Image.open(image_path)
     plt.imshow(image)
     plt.axis('off')
     plt.show()
     ai_module = AImodule()  # AImodule 인스턴스 생성
     result = ai_module.analyze_image(image_path)  # 인스턴스를 통해 메서드 호출
+    print(result)
+
