@@ -99,7 +99,8 @@ class AImodule:
                  "brand": "가게 혹은 브랜드 이름",
                  "type": "물건, 음식 등 상품의 종류",
                  "item": "물건 혹은 서비스 이름",
-                 "valid_until": "YYYY-MM-DD",
+                 "date": "YYYY-MM-DD",
+                 "time": "HH:MM",
                  "code": "바코드 혹은 시리얼 번호",
                  "description": "내용을 간략하게 번역하여 작성"
              }
@@ -110,8 +111,8 @@ class AImodule:
                  "type": "기차/버스/비행기",
                  "from_location": "출발 장소",
                  "to_location": "도착 장소",
-                 "departure_date": "YYYY-MM-DD",
-                 "departure_time": "HH:MM",
+                 "date": "YYYY-MM-DD",
+                 "time": "HH:MM",
                  "description": "내용을 간략하게 번역하여 작성"
              }
 
@@ -120,7 +121,7 @@ class AImodule:
                  "category": "엔터테인먼트",
                  "type": "영화/콘서트/전시",
                  "title": "이벤트 이름",
-                 "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
+                 "date": "YYYY-MM-DD",
                  "time": "HH:MM",
                  "location": "장소 이름",
                  "description": "내용을 간략하게 번역하여 작성"
@@ -130,7 +131,7 @@ class AImodule:
              {
                  "category": "약속",
                  "type": "미팅/의료/식당/등등",
-                 "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
+                 "date": "YYYY-MM-DD",
                  "time": "HH:MM",
                  "location": "장소 이름",
                  "details": "추가 정보",
@@ -141,8 +142,8 @@ class AImodule:
             {
                 "category": "불명",
                 "type": "정보 유형",
-                "date": "YYYY-MM-DD or YYYY-MM-DD ~ YYYY-MM-DD",
-                "time": "HH:MM" or "HH:MM ~ HH:MM",
+                "date": "YYYY-MM-DD",
+                "time": "HH:MM",
                 "description": "내용 간략 설명을 재미있게 그리고 디테일하게 번역하여 작성"
             }        
 

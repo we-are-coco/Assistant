@@ -8,4 +8,6 @@
 *.env
 test.py
 vectorsearch.py
+vectorsearch2.py
+vectorsearch3.py
 *.wav
