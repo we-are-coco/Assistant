@@ -7,7 +7,7 @@ from functools import lru_cache  # lru_cache: 함수 결과 캐시를 위한 데
 from collections import defaultdict  # defaultdict: 기본값을 제공하는 딕셔너리 클래스 / Dictionary class that provides default values
 import heapq  # heapq: 우선순위 큐 알고리즘을 위한 라이브러리 / Library for heap-based priority queue algorithms
 import faiss  # faiss: 고성능 벡터 검색 라이브러리 / Library for high-performance vector search
-from dummydata import dummydata
+from dummydata_1 import dummydata
 
 class VectorSearchEngine:
     # 검색 및 임베딩 기반 검색 엔진 클래스 / Class for vector-based search and embedding search engine
@@ -277,16 +277,14 @@ class VectorSearchEngine:
         return final_score, debug_info
 
     def vector_search(self, data, search_term):
-        """
-        고급 벡터 검색 함수
-        Advanced vector search function
-        """
         self.embedding_cache = {}  # 검색 시마다 임베딩 캐시 초기화
 
         # 데이터(카테고리별 문서)를 평탄화하여 단일 리스트로 변환
         documents = []
         for key, docs in data.items():
             documents.extend(docs)
+        if self.debug:
+            print("[DEBUG] 전체 문서 수:", len(documents))
 
         # temporal 쿼리 처리
         temporal_query = None
@@ -298,21 +296,33 @@ class VectorSearchEngine:
             query_datetime = self.parse_query_datetime(dt_str)
             remaining_tokens = search_term[2:]
             is_temporal = True
+            if self.debug:
+                print("[DEBUG] Temporal query detected:", temporal_query, query_datetime)
         else:
             remaining_tokens = search_term[:]
+            if self.debug:
+                print("[DEBUG] 일반 검색어 사용:", remaining_tokens)
 
         processed_tokens = self.process_search_terms(remaining_tokens)
         final_terms = [(self.clean_token(tok), "normal") for tok in processed_tokens]
+        if self.debug:
+            print("[DEBUG] Processed tokens:", final_terms)
 
         # 고급 임베딩이 활성화된 경우, FAISS를 이용하여 후보 문서 선별
         if self.advanced_embedding:
             query_text = " ".join(remaining_tokens) if remaining_tokens else ""
             query_vec = self.advanced_embed_text(query_text).astype("float32")
+            if self.debug:
+                print("[DEBUG] Query text:", query_text)
+                print("[DEBUG] Query vector:", query_vec)
             doc_vectors = []
-            for doc in documents:
+            for idx, doc in enumerate(documents):
                 doc_text = " ".join([value for key, value in doc.items() if isinstance(value, str)])
                 vec = self.advanced_embed_text(doc_text)
                 doc_vectors.append(vec)
+                if self.debug:
+                    print(f"[DEBUG] Doc {idx} text:", doc_text)
+                    print(f"[DEBUG] Doc {idx} vector:", vec)
             doc_vectors = np.stack(doc_vectors).astype("float32")
             # 정규화하여 코사인 유사도 기반 검색 수행
             faiss.normalize_L2(query_vec.reshape(1, -1))
@@ -324,6 +334,11 @@ class VectorSearchEngine:
             D, I = index.search(query_vec.reshape(1, -1), top_k)
             candidate_docs = [documents[i] for i in I[0]]
             candidate_doc_vectors = doc_vectors[I[0]]
+            if self.debug:
+                print("[DEBUG] FAISS search results:")
+                print("[DEBUG] Similarity scores (D):", D)
+                print("[DEBUG] Indices (I):", I)
+                print("[DEBUG] Number of candidate docs:", len(candidate_docs))
         else:
             candidate_docs = documents
 
@@ -333,69 +348,52 @@ class VectorSearchEngine:
             for idx, doc in enumerate(candidate_docs):
                 # 1. 토큰 매칭 점수 계산
                 token_score, debug_info = self.compute_match_score(doc, final_terms, temporal_query, query_datetime, debug=self.debug)
-                # Force vector similarity to be 1.0 for scoring, mimicking previous behavior irrespective of debug mode
+                # 강제로 벡터 점수를 1.0으로 설정 (이전 방식과의 호환)
                 vector_score = 1.0
-                combined_score = token_score
+                combined_score = token_score  # 현재는 단순 결합 (개선 가능)
                 debug_info.append({
                     "token_score": str(float(token_score)),
                     "vector_score": str(float(vector_score)),
                     "combined_score": str(float(combined_score))
                 })
+                if self.debug:
+                    print(f"[DEBUG] Candidate doc index {idx}: token_score = {token_score}, combined_score = {combined_score}")
                 doc_scores.append((combined_score, debug_info, doc))
         else:
             # 기본 검색 모드에서는 토큰 매칭만 수행
-            # In basic mode, perform only token matching
             for doc in candidate_docs:
-                score, debug_info = self.compute_match_score(
-                    doc, final_terms, temporal_query, query_datetime, debug=self.debug
-                )
+                score, debug_info = self.compute_match_score(doc, final_terms, temporal_query, query_datetime, debug=self.debug)
                 doc_scores.append((score, debug_info, doc))
 
-        # 동적 임계값 설정
-        # Dynamic threshold setting
+        # 동적 임계값 설정 - 검색어 토큰 수에 따라 임계값 조정
         base_threshold = self.base_threshold
         term_count = len(final_terms)
-        # 검색어 토큰 수에 따라 임계값 조정
-        # Adjust threshold based on number of search tokens
         threshold_adjust = {1: 0.0, 2: 0.05, 3: 0.1}.get(term_count, 0.15)
         overall_threshold = max(min(base_threshold + threshold_adjust, 0.75), 0.5)
+        if self.debug:
+            print(f"[DEBUG] Overall threshold: {overall_threshold}")
 
         # 임계값을 넘는 문서만 선별
-        # Filter documents above threshold
         qualified_docs = [
             (score, debug_info, doc) 
             for score, debug_info, doc in doc_scores 
             if score >= overall_threshold
         ]
+        if self.debug:
+            print("[DEBUG] Number of qualified docs:", len(qualified_docs))
 
         if not qualified_docs:
-            return [{"result": "검색 결과 없음"}]  # No search results
+            return [{"result": "검색 결과 없음"}]
 
         # 점수 기준 내림차순 정렬
-        # Sort by score in descending order
         qualified_docs.sort(key=lambda x: x[0], reverse=True)
 
-        # 검색어 토큰 수에 따라 반환할 결과 수 결정
-        # Determine number of results to return based on token count
-        if term_count == 0:
-            final_limit = len(qualified_docs)  # 토큰이 없으면 전체 반환 / Return all if no tokens
-        elif term_count == 1:
-            # 시간 관련 검색어면 5개, 아니면 3개 반환
-            # Return 5 results for temporal queries, 3 for others
-            final_limit = 5 if is_temporal else 3
-        elif term_count == 2:
-            final_limit = 2  # 토큰 2개면 2개 반환 / Return 2 results for 2 tokens
-        else:
-            final_limit = 1  # 그 외에는 1개만 반환 / Return 1 result for other cases
-
         # 최종 결과 생성
-        # Generate final results
         final_docs = []
-        for score, debug_info, doc in qualified_docs[:final_limit]:
+        for score, debug_info, doc in qualified_docs:
             doc_copy = dict(doc)
             if self.debug:
                 # 디버그 모드에서는 점수와 디버그 정보 포함
-                # Include score and debug info in debug mode
                 doc_copy["_score"] = float(score)
                 doc_copy["_debug"] = debug_info
             final_docs.append(doc_copy)
@@ -405,44 +403,24 @@ class VectorSearchEngine:
 # %%
 import time
 
-data, test_search_terms = dummydata(1)
-
-for term in test_search_terms:
-    vs = VectorSearchEngine(vector_dim=12, debug=False, advanced_embedding=False, base_threshold=0.6, match_threshold=0.5)
-    start_time = time.time()
-    results = vs.vector_search(data, term)
-    end_time = time.time()
-    execution_time = end_time - start_time
-
-    print("검색어:", term)
-    print(f"검색 소요 시간: {execution_time:.4f}초")
-    print("검색 결과:")
-    print(json.dumps(results, ensure_ascii=False, indent=2))
-    print("-" * 50)
-# %%
+data, test_search_terms = dummydata(2)
 
 inputs = [
-    "다음 주에 만료되는 쿠폰 찾아줘.",
-    "내년 6월 이후에 있는 티켓이 뭐가 있지?",
-    "오늘 이후로 쓸 수 있는 쿠폰 찾아줘",
-    "다음 주 오후 6시 이후 강남에서 약속 찾아줘.",
-    "부산으로 가는 티켓 찾아줘.",
-    "15일에 뉴욕으로 가는 비행기 티켓 찾아줘",
-    "쿠팡찾아줘",
+    "아메리카노 찾아줘",
+    "다음 주에 만료되는 쿠폰 찾아줘."
 ]
 
 outputs = [
-    ["이전", "2025-02-13", "쿠폰"],
-    ["이후", "2026-06-01", "티켓"],
-    ["이후", "2025-02-06 16:09:47", "쿠폰"],
-    ["이후", "2025-02-13 18:00:00", "강남", "약속"],
-    ["부산", "티켓"],
-    ["15일", "뉴욕", "티켓"],
-    ["쿠팡"],
+    ['아메리카노'],
+    [
+        "이전",
+        "2025-02-21",
+        "쿠폰"
+    ]
 ]
 
 for nlp_input, term in zip(inputs, outputs):
-    vs = VectorSearchEngine(vector_dim=12, debug=False, advanced_embedding=True, base_threshold=0.6, match_threshold=0.5)
+    vs = VectorSearchEngine(vector_dim=12, debug=True, advanced_embedding=True, base_threshold=0.6, match_threshold=0.5)
     start_time = time.time()
     results = vs.vector_search(data, term)
     end_time = time.time()
