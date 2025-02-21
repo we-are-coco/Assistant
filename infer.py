@@ -28,8 +28,8 @@ def infer(dataset=1, days=30):
                 {
                     "is_reco": False,
                     "id": (원래 데이터의 id),
-                    "fixed_date": "yyyy-mm-dd",
-                    "fixed_time": "hh:mm",
+                    "reco_date": "yyyy-mm-dd",
+                    "reco_time": "hh:mm",
                     "description": (원래 데이터의 description)
                 }
     """
@@ -94,8 +94,8 @@ def infer(dataset=1, days=30):
         result.append({
             "is_reco": False,
             "id": id_val,
-            "fixed_date": event.date.strftime("%Y-%m-%d") if isinstance(event.date, datetime.date) else event.date,
-            "fixed_time": event.time,
+            "reco_date": event.date.strftime("%Y-%m-%d") if isinstance(event.date, datetime.date) else event.date,
+            "reco_time": event.time,
             "description": event.data.get("description", "")
         })
 
