@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('recommendation_grpo_feedback.log'),
+        logging.FileHandler('recommendation_PRO_feedback.log'),
         logging.StreamHandler()
     ]
 )
@@ -134,9 +134,9 @@ class FeatureExtractor:
             features.extend([0.0] * (self.output_dim - len(features)))
         return features
 
-class GRPOModel(nn.Module):
+class PROModel(nn.Module):
     def __init__(self, total_input_dim=57, hidden_dim=32):
-        super(GRPOModel, self).__init__()
+        super(PROModel, self).__init__()
         self.coupon_input_dim = 28  
         self.fixed_input_dim = total_input_dim - self.coupon_input_dim  # 29
         
@@ -184,10 +184,10 @@ class GRPOModel(nn.Module):
         outputs = torch.cat([out_date, out_time, out_schedule, out_weekday], dim=-1)
         return outputs
 
-class GRPORecommendationAgent:
+class PRORecommendationAgent:
     def __init__(self, window_days=30):
         self.window_days = window_days
-        self.model = GRPOModel(total_input_dim=57, hidden_dim=32)
+        self.model = PROModel(total_input_dim=57, hidden_dim=32)
         self.optimizer = optim.Adam(self.model.parameters(), lr=CONFIG["learning_rate"])
         self.feature_extractor = FeatureExtractor()
         self.used_coupons_global = set()
@@ -197,8 +197,8 @@ class GRPORecommendationAgent:
         self.used_coupons_global = set()
 
     def compute_recommended_time(self, coupon: Event, fixed_events: List[Event]) -> str:
-        start_range = 9 * 60    # 09:00 -> 540분
-        end_range = 21 * 60     # 21:00 -> 1260분
+        start_range = 9 * 60
+        end_range = 21 * 60
         candidate_times = list(range(start_range, end_range + 1, 15))
         
         forbidden_intervals = []
@@ -237,24 +237,42 @@ class GRPORecommendationAgent:
         for coupon in valid_coupons:
             if coupon.title in self.used_coupons_global:
                 continue
-            days_remaining = (coupon.date - base_date).days
-            if days_remaining <= 0:
+            if coupon.date < base_date:
                 continue
+
+            valid_end_date = min(coupon.date, end_date)
+            valid_days = (valid_end_date - base_date).days
+            if valid_days < 0:
+                continue
+
             features = self.feature_extractor.extract_features(coupon)
             feat_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
+
             with torch.no_grad():
-                predicted_values = self.model(feat_tensor).squeeze(0).tolist()
-            fixed_for_coupon = [fe for fe in fixed_events if fe.date == coupon.date and fe.time]
-            recommended_time = self.compute_recommended_time(coupon, fixed_for_coupon)
+                outputs = self.model(feat_tensor)
+            
+            raw_date_score = outputs[0, 0].item() + random.gauss(0, 0.5)
+            predicted_date_score = 1 + torch.sigmoid(torch.tensor(raw_date_score)) * 4
+            predicted_date_score = predicted_date_score.item()
+
+            offset_days = round(((predicted_date_score - 1) / 4) * valid_days)
+            recommended_date = base_date + datetime.timedelta(days=offset_days)
+
+            fixed_for_date = [fe for fe in fixed_events if fe.date == recommended_date and fe.time]
+            recommended_time = self.compute_recommended_time(coupon, fixed_for_date)
+
+            days_remaining = (coupon.date - base_date).days
+
             recommendations.append({
                 "type": "추천 일정",
                 "coupon": coupon.title,
                 "time": recommended_time,
-                "date": coupon.date,
+                "date": recommended_date,
+                "expiration_date": coupon.date,
                 "brand": coupon.data.get("brand", ""),
                 "coupon_type": coupon.data.get("type", ""),
-                "predicted_value": sum(predicted_values) / len(predicted_values),
-                "predicted_criteria": predicted_values,
+                "predicted_value": sum(outputs.squeeze(0).tolist()) / len(outputs.squeeze(0).tolist()),
+                "predicted_criteria": outputs.squeeze(0).tolist(),
                 "days_remaining": days_remaining,
                 "features": features
             })
@@ -357,10 +375,10 @@ def print_schedule(schedule: List[Dict], fixed_events: List[Event],
                 rec_time = rec.get("time", "")
                 if rec_time:
                     print(f"       추천 시간: {rec_time}")
-                rec_date = rec.get("date")
-                if rec_date and isinstance(rec_date, datetime.date):
-                    rec_date_str = f"{rec_date.strftime('%Y-%m-%d')} ({get_korean_weekday(rec_date)})"
-                    print(f"       원래 만료일: {rec_date_str}")
+                expiration_date = rec.get("expiration_date")
+                if expiration_date and isinstance(expiration_date, datetime.date):
+                    exp_date_str = f"{expiration_date.strftime('%Y-%m-%d')} ({get_korean_weekday(expiration_date)})"
+                    print(f"       원래 만료일: {exp_date_str}")
                 brand = rec.get("brand")
                 coupon_type = rec.get("coupon_type")
                 if brand:
@@ -371,7 +389,7 @@ def print_schedule(schedule: List[Dict], fixed_events: List[Event],
     print("============================================\n")
 
 def main():
-    logger.info("GRPO 기반 쿠폰 추천 시스템 시작")
+    logger.info("PRO 기반 쿠폰 추천 시스템 시작")
     try:
         dataset_num = int(input("데이터셋 번호 (예: 1): "))
         mode = int(input("모드 선택 (1: 훈련, 2: 추천): "))
@@ -392,12 +410,14 @@ def main():
     logger.info("데이터 로드 중...")
     data, _ = dummydata(dataset_num)
     
-    base_date = datetime.date(2025, 2, 15)
+    base_date = datetime.date.today()
     end_date = base_date + datetime.timedelta(days=days)
 
     fixed_events = []
-    for key in ["교통", "약속"]:
-        for event_data in data.get(key, []):
+    for key, events in data.items():
+        if key in ["쿠폰", "불명", "기타"]:
+            continue
+        for event_data in events:
             try:
                 event = Event.from_dict(event_data)
                 if base_date <= event.date <= end_date:
@@ -405,7 +425,7 @@ def main():
                     logger.info(f"고정 이벤트 추가: {event.title}")
             except Exception as e:
                 logger.error(f"고정 이벤트 변환 실패: {e}")
-
+    
     valid_coupons = []
     for coupon_data in data.get("쿠폰", []):
         try:
@@ -421,11 +441,10 @@ def main():
         return
 
     logger.info(f"총 {len(valid_coupons)}개의 유효한 쿠폰과 {len(fixed_events)}개의 고정 이벤트를 찾았습니다.")
-    agent = GRPORecommendationAgent(window_days=CONFIG["window_days"])
-    agent.reset_used_coupons()
+    agent = PRORecommendationAgent(window_days=CONFIG["window_days"])
     model_dir = Path(CONFIG["model_dir"])
     model_dir.mkdir(parents=True, exist_ok=True)
-    model_path = model_dir / "grpo_recommendation_model.pth"
+    model_path = model_dir / "PRO_recommendation_model.pth"
     if model_path.exists():
         try:
             agent.load(str(model_path))
@@ -443,6 +462,9 @@ def main():
 
     for iteration in range(num_iterations):
         try:
+
+            agent.reset_used_coupons()
+            
             if mode == 1:
                 logger.info(f"훈련 반복 {iteration+1}/{num_iterations}")
             schedule = agent.recommend(valid_coupons, fixed_events, base_date, end_date)
