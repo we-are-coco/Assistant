@@ -92,7 +92,7 @@ class AImodule:
            - "Others": Images that don't contain any schedule-related information
 
         2. Based on the classified category, extract relevant information using the appropriate format below:
-
+    
            - For Coupon:
              {
                  "category": "쿠폰",
@@ -102,9 +102,9 @@ class AImodule:
                  "date": "YYYY-MM-DD",
                  "time": "HH:MM",
                  "code": "바코드 혹은 시리얼 번호",
-                 "description": "내용을 간략하게 번역하여 작성"
+                 "description" : "item의 유형 및 정보에 해당하는 태그 2~3개(예: 카페, 편의점, 커피, 디저트, 치킨, 피자 등)를 띄어쓰기를 구분으로 작성"
              }
-
+ 
            - For Transportation:
              {
                  "category": "교통",
@@ -113,9 +113,10 @@ class AImodule:
                  "to_location": "도착 장소",
                  "date": "YYYY-MM-DD",
                  "time": "HH:MM",
-                 "description": "내용을 간략하게 번역하여 작성"
+                 "description": ""from" 출발 "to" 도착 "type" 추가 정보(좌석정보, 사용기한 등)"
+                 - if "from" and "to" are not located in South Korea, translate the name of the cities in Korean and include the name of the country at description field.
              }
-
+ 
            - For Entertainment:
              {
                  "category": "엔터테인먼트",
@@ -124,9 +125,9 @@ class AImodule:
                  "date": "YYYY-MM-DD",
                  "time": "HH:MM",
                  "location": "장소 이름",
-                 "description": "내용을 간략하게 번역하여 작성"
+                 "description": "내용을 요약하여 작성"
              }
-
+ 
            - For Appointment:
              {
                  "category": "약속",
@@ -135,30 +136,31 @@ class AImodule:
                  "time": "HH:MM",
                  "location": "장소 이름",
                  "details": "추가 정보",
-                 "description": "내용을 간략하게 번역하여 작성"
+                 "description": "내용을 요약하여 작성"
              }
-
+ 
             - For Unsure:
             {
                 "category": "불명",
                 "type": "정보 유형",
                 "date": "YYYY-MM-DD",
                 "time": "HH:MM",
-                "description": "내용 간략 설명을 재미있게 그리고 디테일하게 번역하여 작성"
+                "description": "내용을 요약하여 작성"
             }        
-
+ 
            - For Others:
              {
                  "category": "기타",
-                 "description": "내용 간략 설명을 재미있게 그리고 디테일하게 번역하여 작성"
+                 "description": "재미있는 문구를 넣어서 이미지에 대한 정보를 요약"
              }
-
+ 
         IMPORTANT INSTRUCTIONS:
         - Choose EXACTLY ONE category that best describes the image
         - Use EXACTLY the format shown above for the identified category
         - Use "null" if information is not available
         - Return ONLY the JSON object, no additional text
-        - Keep all responses in Korean language
+        - If the image contains multiple items, return multiple JSON objects in exactly the same format as shown above
+        - Keep all responses in Korean language including names of brands and cities
         - If unsure or if the image doesn't clearly fit into the first four categories, classify as "Others"
         """
 
@@ -171,7 +173,7 @@ if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
 
-    image_path = "img/gifticon.jpg"
+    image_path = "img/flight.png"
     image = Image.open(image_path)
     plt.imshow(image)
     plt.axis('off')
@@ -180,3 +182,5 @@ if __name__ == "__main__":
     result = ai_module.analyze_image(image_path)  # 인스턴스를 통해 메서드 호출
     print(result)
 
+
+# %%
